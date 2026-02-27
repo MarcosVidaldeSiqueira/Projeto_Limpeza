@@ -4,7 +4,7 @@
 
 install.packages("usethis")
 
-#cód. p/ configurar o GIT com minhas credenciais 
+#cód. p/ configurar o GIT com minhas credenciais
 usethis::use_git_config(user.name = "Marcos Vidal",
                         user.email = "232029443@aluno.unb.br")
 
@@ -22,7 +22,7 @@ usethis::git_sitrep()
 library(readr)
 library(lubridate)
 library(tidyverse)
- 
+
 
 
 
@@ -36,14 +36,12 @@ Reports$`Desde quando está se sentindo mal?` <- dmy(Reports$`Desde quando está
 
 Reports$Ind_Febre <- str_detect(Reports$`Quais sintomas você sentindo neste momento?`, "Febre")
 
-
-str(Reports$Ind_Febre)
 table(Reports$Ind_Febre)
 
-Reports$Sindrome_Gripal <- str_detect(Reports$`Quais sintomas você sentindo neste momento?`, 
+Reports$Sindrome_Gripal <- str_detect(Reports$`Quais sintomas você sentindo neste momento?`,
                                       "Febre|Coriza|Diminuição do apetite")
 
-Reports$Sindrome_Diarreica <- str_detect(Reports$`Quais sintomas você sentindo neste momento?`, 
+Reports$Sindrome_Diarreica <- str_detect(Reports$`Quais sintomas você sentindo neste momento?`,
                                         "Diarreia|Dor abdominal|Vômito|Diminuição do apetite")
 
 Reports$Sindrome_Exantematica <- str_detect(Reports$`Quais sintomas você sentindo neste momento?`,
@@ -61,18 +59,27 @@ Reports$Sintomaticos_Inespecificos <- Reports$Sindrome_Conjuntiva == FALSE &
                                                    Reports$Sindrome_Exantematica == FALSE &
                                                    Reports$Sindrome_Gripal == FALSE
 
-Reports$Sintomaticos_Inespecificos2 <- !is.na(Reports$`Quais sintomas você sentindo neste momento?`) & 
+Reports$Sintomaticos_Inespecificos2 <- !is.na(Reports$`Quais sintomas você sentindo neste momento?`) &
   Reports$Sindrome_Conjuntiva == FALSE &
-  
+
   Reports$Sindrome_Diarreica == FALSE &
-  
+
   Reports$Sindrome_IST == FALSE &
-  
+
   Reports$Sindrome_Exantematica == FALSE &
-  
+
   Reports$Sindrome_Gripal == FALSE
 
-table(Reports$Sindrome_Conjuntiva)
-table(Reports$Sindrome_Exantematica)
-table(Reports$Sindrome_IST)
-table(Reports$Sindrome_Gripal)
+# Criando a coluna de Semana epidemiológica a partir da col. desde quando...  --------
+Reports$Semana_Epi <- epiweek(Reports$`Desde quando está se sentindo mal?`)
+Reports$Ano_Epi <- epiyear(Reports$`Desde quando está se sentindo mal?`)
+
+#Dataframe de resumo de semana epi. por reports da sindr. gripal
+Resumo_Semanal <- Reports|>
+                group_by(Semana_Epi, Ano_Epi)|>
+                summarise(Total_Gripal = sum(Sindrome_Gripal, na.rm = TRUE))
+
+#criando o gráfico da sindr. gripal
+ggplot(Resumo_Semanal,
+       aes(x = Semana_Epi, y = Total_Gripal)) +
+  geom_line()
