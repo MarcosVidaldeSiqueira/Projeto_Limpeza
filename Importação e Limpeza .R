@@ -24,14 +24,10 @@ library(lubridate)
 library(tidyverse)
 
 
-
-
-
 Reports <- read_csv2(here::here("reports_10_2026-02-02.csv") , na = "-")
 
 str(Reports)
 
-Reports$`Data de Criação` <- dmy(Reports$`Data de Criação`)
 Reports$`Desde quando está se sentindo mal?` <- dmy(Reports$`Desde quando está se sentindo mal?`)
 
 Reports$Ind_Febre <- str_detect(Reports$`Quais sintomas você sentindo neste momento?`, "Febre")
@@ -76,10 +72,15 @@ Reports$Ano_Epi <- epiyear(Reports$`Desde quando está se sentindo mal?`)
 
 #Dataframe de resumo de semana epi. por reports da sindr. gripal
 Resumo_Semanal <- Reports|>
-                group_by(Semana_Epi, Ano_Epi)|>
+                mutate(Semana_Continua = paste(Ano_Epi, Semana_Epi, sep = "-"))|>
+                group_by(Semana_Continua)|>
                 summarise(Total_Gripal = sum(Sindrome_Gripal, na.rm = TRUE))
+
 
 #criando o gráfico da sindr. gripal
 ggplot(Resumo_Semanal,
-       aes(x = Semana_Epi, y = Total_Gripal)) +
+       aes(x = Semana_Continua, group = 1 , y = Total_Gripal))+
+      labs(x = "SE", y = "Síndrome Gripal")+
+      scale_x_discrete(labels = function(x) str_remove(x, ".*-"))+
   geom_line()
+
