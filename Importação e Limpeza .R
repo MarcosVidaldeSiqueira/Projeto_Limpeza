@@ -1,7 +1,5 @@
 # Fazendo a integração com Git ----------------------------------------------
-
 #instalo o pacote usethis
-
 install.packages("usethis")
 
 #cód. p/ configurar o GIT com minhas credenciais
@@ -18,11 +16,13 @@ usethis::edit_r_environ()
 usethis::git_sitrep()
 
 
+# Bíbliotecas  ------------------------------------------------------------
 
 library(readr)
 library(lubridate)
 library(tidyverse)
-
+library(usethis)
+library(here)
 
 Reports <- read_csv2(here::here("reports_10_2026-02-02.csv") , na = "-")
 
@@ -70,17 +70,28 @@ Reports$Sintomaticos_Inespecificos2 <- !is.na(Reports$`Quais sintomas você sent
 Reports$Semana_Epi <- epiweek(Reports$`Desde quando está se sentindo mal?`)
 Reports$Ano_Epi <- epiyear(Reports$`Desde quando está se sentindo mal?`)
 
-#Dataframe de resumo de semana epi. por reports da sindr. gripal
+#Dataframe de resumo de semana epi. por reports
 Resumo_Semanal <- Reports|>
                 mutate(Semana_Continua = paste(Ano_Epi, Semana_Epi, sep = "-"))|>
                 group_by(Semana_Continua)|>
-                summarise(Total_Gripal = sum(Sindrome_Gripal, na.rm = TRUE))
+                summarise(Total_Gripal = sum(Sindrome_Gripal, na.rm = TRUE),
+                Total_Diarreica = sum(Sindrome_Diarreica, na.rm = TRUE),
+                Total_Conjuntiva = sum(Sindrome_Conjuntiva, na.rm = TRUE),
+                Total_Exantematica = sum(Sindrome_Exantematica, na.rm = TRUE),
+                Total_IST = sum(Sindrome_IST, na.rm = TRUE))|>
+                pivot_longer(starts_with("Total_"), names_to = "Síndromes", values_to = "casos")
 
-
-#criando o gráfico da sindr. gripal
+#criando o gráfico com barra única
 ggplot(Resumo_Semanal,
-       aes(x = Semana_Continua, group = 1 , y = Total_Gripal))+
-      labs(x = "SE", y = "Síndrome Gripal")+
+       aes(x = Semana_Continua, y = casos, group = Síndromes, fill = Síndromes))+
+  labs(x = "SE", y = "Nº de Sintomáticos")+
+  scale_x_discrete(labels = function(x) str_remove(x, ".*-"))+
+  geom_col()
+
+#criando o gráfico com barras p. cada síndrome
+ggplot(Resumo_Semanal,
+       aes(x = Semana_Continua, y = casos, group = Síndromes, fill = Síndromes))+
+      labs(x = "SE", y = "Nº de Sintomáticos", fill = "Síndromes")+
       scale_x_discrete(labels = function(x) str_remove(x, ".*-"))+
-  geom_line()
+  geom_col(position = "dodge")
 
