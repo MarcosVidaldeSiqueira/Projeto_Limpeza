@@ -17,7 +17,8 @@ usethis::git_sitrep()
 
 
 # Bíbliotecas  ------------------------------------------------------------
-
+installed.packages('plotly')
+library(plotly)
 library(readr)
 library(lubridate)
 library(tidyverse)
@@ -81,12 +82,22 @@ Resumo_Semanal <- Reports|>
                 Total_IST = sum(Sindrome_IST, na.rm = TRUE))|>
                 pivot_longer(starts_with("Total_"), names_to = "Síndromes", values_to = "casos")
 
-#criando o gráfico com barra única
-ggplot(Resumo_Semanal,
+#criando o gráfico com barra única interativo com ggplotly
+ggplotly(
+  ggplot(Resumo_Semanal,
        aes(x = Semana_Continua, y = casos, group = Síndromes, fill = Síndromes))+
   labs(x = "SE", y = "Nº de Sintomáticos")+
   scale_x_discrete(labels = function(x) str_remove(x, ".*-"))+
-  geom_col()
+  geom_col(),
+  tooltip = c('x','y'))
+
+#criando gráfico em pontos interativo
+ggplotly(
+ggplot()+
+geom_point(data = Resumo_Semanal, mapping = aes(x = Semana_Continua, y = casos, color = Síndromes))+
+  labs(x = "SE", y = "Nº de Sintomáticos")+
+  scale_x_discrete(labels = function(x) str_remove(x, ".*-"))
+  )
 
 #criando o gráfico com barras p. cada síndrome
 ggplot(Resumo_Semanal,
